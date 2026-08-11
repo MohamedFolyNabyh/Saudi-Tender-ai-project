@@ -4,7 +4,7 @@ from sentence_transformers import CrossEncoder
 class RerankerService:
 
     model = CrossEncoder(
-        "BAAI/bge-reranker-v2-m3"
+        "BAAI/bge-reranker-base"
     )
 
     @classmethod

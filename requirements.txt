@@ -1,54 +1,113 @@
-fastapi==0.116.1
-uvicorn[standard]==0.35.0
 
-python-dotenv==1.1.1
-pydantic==2.11.7
-pydantic-settings==2.10.1
+# =========================
+# FastAPI
+# =========================
 
-sqlalchemy==2.0.43
-psycopg2-binary==2.9.10
-alembic==1.16.4
+fastapi
+uvicorn[standard]
+python-multipart
 
-python-jose[cryptography]==3.5.0
-passlib[bcrypt]==1.7.4
 
-python-multipart==0.0.20
+# =========================
+# Database
+# =========================
 
-redis==6.4.0
+SQLAlchemy
+psycopg2-binary
+alembic
 
-qdrant-client==1.15.1
 
-langchain==0.3.27
-langchain-core==0.3.72
-langchain-community==0.3.27
-langchain-text-splitters==0.3.9
-langgraph==0.6.6
+# =========================
+# Authentication
+# =========================
 
-sentence-transformers==5.1.0
-transformers==4.55.4
-torch==2.8.0
-huggingface-hub==0.34.4
+python-jose[cryptography]
+pwdlib[argon2]
 
-rank-bm25==0.2.2
 
-pypdf==6.0.0
-python-docx==1.2.0
+# =========================
+# Configuration
+# =========================
 
-reportlab==4.4.3
-arabic-reshaper==3.0.0
-python-bidi==0.6.7
+python-dotenv
+pydantic
+pydantic-settings
+email-validator
 
-openai==1.99.9
-google-genai==1.29.0
 
-httpx==0.28.1
-requests==2.32.4
+# =========================
+# LangChain / RAG
+# =========================
 
-numpy==2.2.6
-pandas==2.3.1
-scikit-learn==1.7.1
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
 
-ragas==0.3.2
-datasets==4.0.0
 
-email-validator==2.3.0
+# =========================
+# Embeddings
+# =========================
+
+sentence-transformers
+torch
+transformers
+
+
+# =========================
+# Vector Database
+# =========================
+
+qdrant-client==1.18.0
+
+
+# =========================
+# Reranking
+# =========================
+
+rank-bm25
+
+
+# =========================
+# Redis
+# =========================
+
+redis
+
+
+# =========================
+# LLM / OpenRouter
+# =========================
+
+openai
+
+
+# =========================
+# Document Processing
+# =========================
+
+pypdf
+python-docx
+
+
+# =========================
+# PDF Export
+# =========================
+
+reportlab
+
+
+# =========================
+# HTTP
+# =========================
+
+requests
+httpx
+
+
+# =========================
+# Evaluation
+# =========================
+
+ragas
+datasets

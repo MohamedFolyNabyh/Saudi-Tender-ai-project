@@ -10,7 +10,7 @@ from app.schemas.report_schema import ReportRequest
 from app.services.report_service import ReportService
 from app.services.risk_service import RiskService
 
-from app.dependencies.auth import get_current_user
+from app.core.dependencies import get_current_user
 from app.database.models.project import Project
 from app.database.models.tender import Tender
 
