@@ -2,94 +2,155 @@ import streamlit as st
 
 from api import (
     get_projects,
-    get_tenders,
-    check_response
+    create_project,
+    get_tenders
 )
+
+from auth_guard import require_login
+
+
+# ===========================
+# Authentication
+# ===========================
+
+require_login()
+
+
+# ===========================
+# Page Configuration
+# ===========================
 
 st.set_page_config(
     page_title="Dashboard",
-    page_icon="📂"
+    page_icon="📂",
+    layout="wide"
 )
 
-if "token" not in st.session_state:
-    st.switch_page("pages/Login.py")
+st.title("📂 Dashboard")
 
-st.title("Projects")
+
+# ===========================
+# Fetch Projects
+# ===========================
 
 try:
-
-    projects = check_response(
-        get_projects(
-            st.session_state.token
-        )
-    )
-
+    projects = get_projects()
 except Exception as e:
-
-    st.error(str(e))
+    st.error(f"❌ Failed to load projects: {str(e)}")
     st.stop()
+
+
+# ===========================
+# Project Selection / Switch
+# ===========================
+
+st.subheader("Select Active Project")
 
 if not projects:
+    st.info("No projects found. Create a new project below.")
+else:
+    # إنشاء خريطة للتنقل بين الأسماء والـ IDs
+    project_map = {f"{p['name']} (ID: {p['id']})": p for p in projects}
+    options = list(project_map.keys())
 
-    st.warning("No Projects Found")
-    st.stop()
+    # معرفة الفهرس الحالي إن وجد
+    current_selected_id = st.session_state.get("selected_project")
+    default_index = 0
 
-project_names = {
-    project["name"]: project["id"]
-    for project in projects
-}
+    if current_selected_id:
+        for idx, (label, p_data) in enumerate(project_map.items()):
+            if p_data["id"] == current_selected_id:
+                default_index = idx
+                break
 
-selected_project = st.selectbox(
-    "Select Project",
-    list(project_names.keys())
-)
-
-project_id = project_names[selected_project]
-
-try:
-
-    tenders = check_response(
-
-        get_tenders(
-            project_id,
-            st.session_state.token
-        )
-
+    selected_option = st.selectbox(
+        "Choose Project",
+        options,
+        index=default_index
     )
 
-except Exception as e:
+    selected_project_data = project_map[selected_option]
 
-    st.error(str(e))
-    st.stop()
+    # حفظ القيمة تلقائياً وفوراً في st.session_state
+    st.session_state["selected_project"] = selected_project_data["id"]
+    st.session_state["selected_project_name"] = selected_project_data["name"]
 
-if not tenders:
 
-    st.info("No Tenders Found")
-    st.stop()
+# ===========================
+# Current Active Project Info & Navigation
+# ===========================
 
-tender_names = {
-    tender["title"]: tender["id"]
-    for tender in tenders
-}
+active_id = st.session_state.get("selected_project")
 
-selected_tender = st.selectbox(
-    "Select Tender",
-    list(tender_names.keys())
-)
+if active_id:
+    st.divider()
+    active_name = st.session_state.get("selected_project_name", active_id)
+    st.success(f"✅ Currently Active Project: **{active_name}** (`{active_id}`)")
 
-if st.button(
-    "Open Tender",
-    use_container_width=True
-):
+    # جلب الـ Tenders الخاصة بالمشروع المحدّد
+    try:
+        tenders = get_tenders(active_id)
+        st.session_state["tenders"] = tenders
+        
+        st.write(f"### Tenders in this project ({len(tenders)})")
+        
+        if tenders:
+            # اختيار مناقصة محددة للتفاعل معها
+            tender_map = {f"{t.get('tender_name', 'Untitled')} (ID: {t.get('id')})": t for t in tenders}
+            selected_t_label = st.selectbox("Select a Tender to Work On", list(tender_map.keys()))
+            chosen_tender = tender_map[selected_t_label]
+            
+            # حفظ الـ tender_id للـ Chat والـ Report
+            st.session_state["tender_id"] = chosen_tender.get("id")
+            st.session_state["tender_title"] = chosen_tender.get("tender_name")
 
-    st.session_state.project_id = project_id
+            # أزرار الانتقال (Chat, Report, Upload)
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("💬 Open Chat", use_container_width=True):
+                    st.switch_page("pages/Chat.py")
+            with col2:
+                if st.button("📊 View Report", use_container_width=True):
+                    st.switch_page("pages/Report.py")
+            with col3:
+                if st.button("📤 Upload More Tenders", use_container_width=True):
+                    st.switch_page("pages/Upload.py")
 
-    st.session_state.tender_id = tender_names[
-        selected_tender
-    ]
+        else:
+            st.info("No tenders uploaded for this project yet.")
+            # زر الانتقال للرفع مباشرة عند عدم وجود مناقصات
+            if st.button("📤 Upload First Tender", use_container_width=True):
+                st.switch_page("pages/Upload.py")
 
-    st.session_state.tender_title = selected_tender
+    except Exception as e:
+        st.error(f"Failed to load tenders: {e}")
 
-    st.switch_page(
-        "pages/Chat.py"
-    )
+st.divider()
+
+
+# ===========================
+# Create New Project
+# ===========================
+
+st.subheader("➕ Create New Project")
+
+with st.form("create_project_form"):
+    new_p_name = st.text_input("Project Name", placeholder="e.g. Saudi Tender Evaluation")
+    new_p_desc = st.text_area("Description", placeholder="Optional description...")
+    submit_button = st.form_submit_button("Create Project", use_container_width=True)
+
+    if submit_button:
+        if not new_p_name.strip():
+            st.error("Project name cannot be empty.")
+        else:
+            try:
+                created_p = create_project(name=new_p_name.strip(), description=new_p_desc.strip())
+                new_id = created_p.get("id")
+                
+                st.session_state["selected_project"] = new_id
+                st.session_state["selected_project_name"] = created_p.get("name", new_p_name)
+                
+                st.success(f"✅ Project '{new_p_name}' created successfully!")
+                st.switch_page("pages/Upload.py")
+            except Exception as err:
+                st.error(f"❌ Failed to create project: {str(err)}")

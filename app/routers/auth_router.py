@@ -46,7 +46,7 @@ def register(
 
     except ValueError as e:
 
-        raise HTTPException(
+        raise   HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )

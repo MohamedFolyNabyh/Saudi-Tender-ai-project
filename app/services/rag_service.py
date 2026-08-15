@@ -10,27 +10,93 @@ from langsmith import traceable
 
 
 class RAGService:
-    
     @classmethod
     @traceable(name="Retrieve", run_type="retriever")
-    def retrieve( cls,tender: Tender, question: str, limit: int = 5):
-        embedding = EmbeddingService.model.encode(question,normalize_embeddings=True)
+    def retrieve(cls,
+        tender: Tender,
+        question: str,
+        limit: int = 5
+    ):
 
-        vector_results = VectorService.search(collection_name=tender.qdrant_collection,
-        query_vector=embedding.tolist(),
-        limit=50
-         )
+        # ==========================================
+        # 1. Query Embedding
+        # ==========================================
 
-        bm25_results = BM25Service.search(
-        vector_results,
-        question
+        embedding = EmbeddingService.embed_query(
+            question
         )
 
-        merged = FusionService.rrf(bm25_results,vector_results)
+        # ==========================================
+        # 2. Vector Search
+        # ==========================================
 
-        reranked = RerankerService.rerank(question,merged)
+        vector_results = VectorService.search(
+            collection_name=tender.qdrant_collection,
+            query_vector=embedding.tolist(),
+            limit=50
+        )
+
+        # ==========================================
+        # 3. Load all chunks for BM25
+        # ==========================================
+
+        all_chunks = VectorService.get_all_chunks(
+            tender.qdrant_collection
+        )
+
+        # ==========================================
+        # 4. BM25 Search
+        # ==========================================
+
+        bm25_results = BM25Service.search(
+            all_chunks,
+            question
+        )
+
+        # ==========================================
+        # 5. Reciprocal Rank Fusion
+        # ==========================================
+
+        merged = FusionService.rrf(
+            bm25_results,
+            vector_results
+        )
+
+        # ==========================================
+        # 6. CrossEncoder Reranking
+        # ==========================================
+
+        reranked = RerankerService.rerank(
+            question,
+            merged
+        )
+
+        # ==========================================
+        # 7. Final Top-K
+        # ==========================================
 
         return reranked[:limit]
+    
+    # @classmethod
+    # @traceable(name="Retrieve", run_type="retriever")
+    # def retrieve( cls,tender: Tender, question: str, limit: int = 5):
+    #     embedding = EmbeddingService.embed_query((question)
+
+    #     vector_results = VectorService.search(collection_name=tender.qdrant_collection,
+    #     query_vector=embedding.tolist(),
+    #     limit=50
+    #      )
+
+    #     bm25_results = BM25Service.search(
+    #     vector_results,
+    #     question
+    #     )
+
+    #     merged = FusionService.rrf(bm25_results,vector_results)
+
+    #     reranked = RerankerService.rerank(question,merged)
+
+    #     return reranked[:limit]
         
 
     @classmethod
@@ -86,6 +152,7 @@ User Question:
 
         return {
             "answer": answer,
+            "chunks":chunks,
             "sources": [
                 {
                     "page": chunk["page"],

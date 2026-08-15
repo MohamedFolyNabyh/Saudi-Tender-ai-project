@@ -3,9 +3,12 @@ from langgraph.graph import StateGraph
 
 from app.graph.state import GraphState
 
+
 from app.agents.rag_agent import RAGAgent
 from app.agents.sql_agent import SQLAgent
 from app.agents.report_agent import ReportAgent
+from app.agents.risk_agent import RiskAgent
+from app.agents.compare_agent import CompareAgent
 from app.agents.supervisor_agent import SupervisorAgent
 
 builder = StateGraph(GraphState)

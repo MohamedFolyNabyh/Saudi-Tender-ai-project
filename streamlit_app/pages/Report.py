@@ -1,4 +1,3 @@
-
 import streamlit as st
 
 from api import (
@@ -27,23 +26,59 @@ st.set_page_config(
 )
 
 
-st.title("Tender Reports")
+st.title("📑 Tender Reports")
 
 
 # ==========================
 # Check Selected Tender
 # ==========================
 
-if "selected_tender" not in st.session_state:
+tender_id = st.session_state.get(
+    "tender_id"
+)
 
-    st.error(
-        "Please select a tender first."
+
+if not tender_id:
+
+    st.warning(
+        "Please select a tender first from Dashboard."
     )
+
+    if st.button(
+        "📂 Go to Dashboard",
+        use_container_width=True
+    ):
+
+        st.switch_page(
+            "pages/Dashboard.py"
+        )
 
     st.stop()
 
 
-tender_id = st.session_state.selected_tender
+# ==========================
+# Selected Tender Information
+# ==========================
+
+tender_title = st.session_state.get(
+    "tender_title",
+    "Selected Tender"
+)
+
+
+project_name = st.session_state.get(
+    "project_name",
+    "Selected Project"
+)
+
+
+st.info(
+    f"Project: **{project_name}**"
+)
+
+st.info(
+    f"Tender: **{tender_title}**"
+)
 
 
 # ==========================
@@ -52,15 +87,15 @@ tender_id = st.session_state.selected_tender
 
 if "reports" not in st.session_state:
 
-    st.session_state.reports = {}
+    st.session_state["reports"] = {}
 
 
-if tender_id not in st.session_state.reports:
+if tender_id not in st.session_state["reports"]:
 
-    st.session_state.reports[tender_id] = {}
+    st.session_state["reports"][tender_id] = {}
 
 
-reports = st.session_state.reports[tender_id]
+reports = st.session_state["reports"][tender_id]
 
 
 # ==========================
@@ -81,7 +116,7 @@ report_type = st.selectbox(
 # ==========================
 
 if st.button(
-    "Generate Report",
+    "📑 Generate Report",
     use_container_width=True
 ):
 
@@ -94,6 +129,7 @@ if st.button(
         st.info(
             "Report already exists. Regenerating..."
         )
+
 
     # --------------------------
     # Generate
@@ -110,28 +146,78 @@ if st.button(
                 report_type=report_type
             )
 
+
+            # ======================
+            # Get Report Content
+            # ======================
+
+            if isinstance(
+                response,
+                dict
+            ):
+
+                content = (
+                    response.get("answer")
+                    or response.get("content")
+                    or response.get("report")
+                )
+
+                if not content:
+
+                    content = str(
+                        response
+                    )
+
+            else:
+
+                content = str(
+                    response
+                )
+
+
+            # ======================
+            # Filename
+            # ======================
+
             filename = (
                 f"tender_{tender_id}_"
                 f"{report_type.lower()}.pdf"
             )
 
+
+            # ======================
+            # Save Report
+            # ======================
+
             reports[report_type] = {
 
-                "content": response["answer"],
+                "content": content,
 
-                "sources": response.get(
-                    "sources",
-                    []
+                "sources": (
+                    response.get(
+                        "sources",
+                        []
+                    )
+                    if isinstance(
+                        response,
+                        dict
+                    )
+                    else []
                 ),
 
                 "filename": filename
             }
 
-            # Remove old generated PDF
+
+            # ======================
+            # Remove Old PDF
+            # ======================
+
             pdf_key = (
                 f"pdf_{tender_id}_"
                 f"{report_type}"
             )
+
 
             if pdf_key in st.session_state:
 
@@ -139,8 +225,9 @@ if st.button(
 
 
             st.success(
-                "Report Generated Successfully"
+                "Report Generated Successfully."
             )
+
 
         except Exception as e:
 
@@ -166,7 +253,7 @@ if report_type in reports:
     # ==========================
 
     st.subheader(
-        f"{report_type} Report"
+        f"📊 {report_type} Report"
     )
 
 
@@ -188,25 +275,36 @@ if report_type in reports:
         st.divider()
 
         with st.expander(
-            "Sources"
+            "📚 Sources"
         ):
 
             for source in report["sources"]:
 
-                page = source.get(
-                    "page",
-                    "Unknown"
-                )
+                if isinstance(
+                    source,
+                    dict
+                ):
 
-                source_name = source.get(
-                    "source",
-                    "Unknown"
-                )
+                    page = source.get(
+                        "page",
+                        "Unknown"
+                    )
 
-                st.write(
-                    f"Page: {page} | "
-                    f"Source: {source_name}"
-                )
+                    source_name = source.get(
+                        "source",
+                        "Unknown"
+                    )
+
+                    st.write(
+                        f"Page: {page} | "
+                        f"Source: {source_name}"
+                    )
+
+                else:
+
+                    st.write(
+                        source
+                    )
 
 
     st.divider()
@@ -226,7 +324,7 @@ if report_type in reports:
     with col1:
 
         if st.button(
-            "Prepare PDF",
+            "📄 Prepare PDF",
             use_container_width=True
         ):
 
@@ -241,13 +339,16 @@ if report_type in reports:
                         report["filename"]
                     )
 
+
                     st.session_state[
                         f"pdf_{tender_id}_{report_type}"
                     ] = pdf_bytes
 
+
                     st.success(
                         "PDF is ready."
                     )
+
 
                 except Exception as e:
 
@@ -263,13 +364,15 @@ if report_type in reports:
     with col2:
 
         if st.button(
-            "Clear Report",
+            "🗑️ Clear Report",
             use_container_width=True
         ):
 
             # Remove report
 
-            del reports[report_type]
+            del reports[
+                report_type
+            ]
 
 
             # Remove generated PDF
@@ -279,9 +382,12 @@ if report_type in reports:
                 f"{report_type}"
             )
 
+
             if pdf_key in st.session_state:
 
-                del st.session_state[pdf_key]
+                del st.session_state[
+                    pdf_key
+                ]
 
 
             st.rerun()
@@ -304,9 +410,11 @@ if report_type in reports:
 
         st.download_button(
 
-            label="Download PDF",
+            label="⬇️ Download PDF",
 
-            data=st.session_state[pdf_key],
+            data=st.session_state[
+                pdf_key
+            ],
 
             file_name=report["filename"],
 
@@ -315,3 +423,19 @@ if report_type in reports:
             use_container_width=True
         )
 
+
+# ==========================
+# Navigation
+# ==========================
+
+st.divider()
+
+
+if st.button(
+    "📂 Back to Dashboard",
+    use_container_width=True
+):
+
+    st.switch_page(
+        "pages/Dashboard.py"
+    )

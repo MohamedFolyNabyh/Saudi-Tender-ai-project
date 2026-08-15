@@ -15,7 +15,7 @@ class LLMService:
     @classmethod
     def _get_client(cls) -> OpenAI:
         """Lazy initialization for OpenAI client."""
-        if cls._clieشnt is None:
+        if cls._client is None:
             cls._client = wrap_openai(OpenAI(
                 base_url="https://openrouter.ai/api/v1",
                 api_key=settings.OPENROUTER_API_KEY,

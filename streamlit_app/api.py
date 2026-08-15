@@ -1,12 +1,11 @@
 import requests
-
-from auth import get_token
+from auth import get_token, save_token
 
 
 BASE_URL = "http://localhost:8000"
 
 
-TIMEOUT = 200
+TIMEOUT = 500
 
 
 
@@ -99,32 +98,31 @@ def register(
     return check_response(response)
 
 
-
-def login(
-    email,
-    password
-):
-
+def login(email, password):
 
     response = requests.post(
-
         f"{BASE_URL}/auth/login",
 
         data={
-
             "username": email,
-
             "password": password
-
         },
 
         timeout=TIMEOUT
-
     )
 
+    if response.status_code == 200:
 
-    return check_response(response)
+        data = response.json()
 
+        token = data.get("access_token")
+
+        if token:
+            save_token(token)
+
+        return token, response
+
+    return None, response
 
 
 # ===========================
@@ -148,32 +146,19 @@ def get_projects():
 
     return check_response(response)
 
-
-
-def create_project(
-    name
-):
-
+def create_project(name, description=""):
+    payload = {"name": name}
+    if description:
+        payload["description"] = description
 
     response = requests.post(
-
         f"{BASE_URL}/projects",
-
-        json={
-
-            "name": name
-
-        },
-
+        json=payload,
         headers=auth_headers(),
-
         timeout=TIMEOUT
-
     )
 
-
     return check_response(response)
-
 
 
 # ===========================
@@ -278,7 +263,7 @@ def chat(
 
         headers=auth_headers(),
 
-        timeout=120
+        timeout=TIMEOUT
 
     )
 
@@ -313,7 +298,7 @@ def compare_tenders(
 
         headers=auth_headers(),
 
-        timeout=120
+        timeout=TIMEOUT
 
     )
 

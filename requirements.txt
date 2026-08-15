@@ -50,7 +50,6 @@ langchain-text-splitters
 # =========================
 
 sentence-transformers
-torch
 transformers
 
 
@@ -111,3 +110,15 @@ httpx
 
 ragas
 datasets
+
+
+PyMuPDF
+
+
+
+streamlit
+
+
+ google-genai
+
+

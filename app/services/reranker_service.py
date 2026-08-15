@@ -4,7 +4,7 @@ from sentence_transformers import CrossEncoder
 class RerankerService:
 
     model = CrossEncoder(
-        "BAAI/bge-reranker-base"
+        "BAAI/bge-reranker-v2-m3"
     )
 
     @classmethod
@@ -32,6 +32,15 @@ class RerankerService:
             reverse=True
 
         )
+
+
+        for rank, (doc, score) in enumerate(ranked[:10], 1):
+            print(
+                f"RERANK #{rank} | "
+                f"score={float(score):.4f} | "
+                f"page={doc.get('page')}"
+            )
+
 
         return [
 

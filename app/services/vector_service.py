@@ -131,6 +131,7 @@
 
 #         return all_chunks
 
+from langchain_core.documents import Document
 
 from typing import Any, Dict, List, Optional
 from qdrant_client import QdrantClient
@@ -195,44 +196,18 @@ class VectorService:
             collection_name=collection_name,
             points=points,
         )
-
-    @classmethod
-    def search(
-        cls,
-        collection_name: str,
-        query_vector: Any,
-        limit: int = 20,
-    ) -> List[Dict[str, Any]]:
-        print("Start Search")
-
-        results = cls.client.query_points(
-            collection_name=collection_name,
-            query=query_vector.tolist(),
-            limit=limit,
-            with_payload=True,
-            with_vectors=False,
-        )
-
-        print("End Search")
-
-        return [
-            {
-                **(point.payload or {}),
-                "score": point.score,
-            }
-            for point in results.points
-        ]
-
     @classmethod
     def get_all_chunks(
         cls,
         collection_name: str,
         batch_size: int = 100,
     ) -> List[Dict[str, Any]]:
+
         all_chunks = []
         offset: Optional[Any] = None
 
         while True:
+
             points, next_offset = cls.client.scroll(
                 collection_name=collection_name,
                 limit=batch_size,
@@ -242,10 +217,15 @@ class VectorService:
             )
 
             for point in points:
-                if point.payload:
-                    chunk_data = dict(point.payload)
-                    chunk_data["point_id"] = point.id
-                    all_chunks.append(chunk_data)
+
+                if not point.payload:
+                    continue
+
+                payload = dict(point.payload)
+
+                payload["point_id"] = point.id
+
+                all_chunks.append(payload)
 
             if next_offset is None:
                 break
@@ -253,3 +233,23 @@ class VectorService:
             offset = next_offset
 
         return all_chunks
+
+
+    @classmethod
+    def search( cls,collection_name: str,query_vector,limit: int = 10,):
+        
+
+        results = cls.client.query_points(
+            collection_name=collection_name,
+            query=query_vector,
+            limit=limit,
+            with_payload=True,
+        )
+
+        return [
+            {
+                **point.payload,
+                "score": point.score,
+            }
+            for point in results.points
+        ]

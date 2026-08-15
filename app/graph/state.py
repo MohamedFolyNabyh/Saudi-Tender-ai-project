@@ -1,10 +1,11 @@
-from typing import TypedDict
+from typing import TypedDict,Any
 
 from app.database.models.tender import Tender
 from app.database.models.user import User
 
 
 class GraphState(TypedDict):
+    db: Any
 
     tender: Tender
 

@@ -35,7 +35,16 @@ if submit:
 
         except Exception as e:
             # 3. عرض نص الخطأ من السيرفر بدون توقف التطبيق
-            st.error(str(e))
+            err_msg = str(e)
+
+            # إذا كانت الرسالة تحتوي على تفاصيل Validation من Pydantic
+            if "string_too_short" in err_msg or "at least 6 characters" in err_msg:
+                st.error("Password must be at least 6 characters long.")
+            elif "already exists" in err_msg.lower():
+                st.error("An account with this email already exists.")
+            else:
+                st.error(err_msg)
+            
 
 st.divider()
 
