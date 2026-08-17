@@ -77,28 +77,6 @@ class RAGService:
 
         return reranked[:limit]
     
-    # @classmethod
-    # @traceable(name="Retrieve", run_type="retriever")
-    # def retrieve( cls,tender: Tender, question: str, limit: int = 5):
-    #     embedding = EmbeddingService.embed_query((question)
-
-    #     vector_results = VectorService.search(collection_name=tender.qdrant_collection,
-    #     query_vector=embedding.tolist(),
-    #     limit=50
-    #      )
-
-    #     bm25_results = BM25Service.search(
-    #     vector_results,
-    #     question
-    #     )
-
-    #     merged = FusionService.rrf(bm25_results,vector_results)
-
-    #     reranked = RerankerService.rerank(question,merged)
-
-    #     return reranked[:limit]
-        
-
     @classmethod
     @traceable(name="RAG Generation", run_type="chain")
     def ask(
