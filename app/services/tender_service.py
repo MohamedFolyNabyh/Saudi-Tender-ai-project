@@ -86,7 +86,7 @@ class TenderService:
             )
 
             # 9. تحديث حالة المناقصة إلى جاهز (READY)
-            tender.status = TenderStatus.PROCESSING
+            tender.status = TenderStatus.COMPLETED
             db.commit()
             db.refresh(tender)
 
