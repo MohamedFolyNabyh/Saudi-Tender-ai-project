@@ -4,9 +4,12 @@ from sqlalchemy.orm import Session
 from app.database.models.project import Project
 from app.database.models.tender import Tender
 from app.database.models.user import User
+
 from app.schemas.chat_schema import ChatRequest
 
 from app.graph.graph import graph
+
+from app.services.memory_service import MemoryService
 
 
 class ChatService:
@@ -35,6 +38,14 @@ class ChatService:
             )
 
         # =====================================
+        # Load Conversation History
+        # =====================================
+
+        history = MemoryService.get_history(
+            user_id=current_user.id
+        )
+
+        # =====================================
         # Initial Graph State
         # =====================================
 
@@ -43,7 +54,7 @@ class ChatService:
             "tender": tender,
             "current_user": current_user,
             "question": request.question,
-            "history": [],
+            "history": history,
             "intent": "",
             "answer": "",
             "sources": []
@@ -55,11 +66,29 @@ class ChatService:
 
         result = graph.invoke(state)
 
+        answer = result.get("answer", "")
+
+        # =====================================
+        # Save Conversation
+        # =====================================
+
+        MemoryService.add_message(
+            user_id=current_user.id,
+            role="user",
+            content=request.question
+        )
+
+        MemoryService.add_message(
+            user_id=current_user.id,
+            role="assistant",
+            content=answer
+        )
+
         # =====================================
         # Return Answer
         # =====================================
 
         return {
-            "answer": result.get("answer", ""),
+            "answer": answer,
             "sources": result.get("sources", [])
         }
